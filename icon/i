@@ -1,0 +1,7 @@
+{
+  "name": "i icon",
+  "icons": [
+    { "name": "Icon1", "url": "https://raw.githubusercontent.com/Aovo7/Funny/main/icon/misaka1.png" },
+    { "name": "Icon2", "url": "https://raw.githubusercontent.com/Aovo7/Funny/00b22fc440b7a82231f7607fc1eac07dd0cc5679/icon/Panda.png" }
+  ]
+}
