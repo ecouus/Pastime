@@ -16,8 +16,7 @@
 # 创建脚本
 nano /root/backup.sh
 ```
-# 复制脚本内容到文件中
-[将脚本内容粘贴进去]（https://github.com）
+[脚本文件]（https://github.com）
 ```bash
 # 设置权限，因包含敏感信息，故仅为文件所有者设置读写执行权限
 chmod 700 /root/backup.sh
