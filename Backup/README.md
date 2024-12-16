@@ -15,7 +15,7 @@
 ```bash
 # 创建脚本
 nano /root/backup.sh
-
+```
 # 复制脚本内容到文件中
 [将脚本内容粘贴进去]（https://github.com）
 ```bash
