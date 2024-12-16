@@ -18,7 +18,7 @@ REMOTE_PORT="22"                           # 目标服务器SSH端口
 # 数据库配置
 DB_USER="root"                            # 数据库用户名
 DB_PASS="你的密码"                         # 数据库密码
-DB_NAME="typecho"                         # 要备份的数据库，多个数据库用空格分隔
+DB_NAME="db1 db2"                         # 要备份的数据库，多个数据库用空格分隔
 
 # SSH密钥配置
 SSH_KEY="/root/.ssh/id_rsa"               # SSH私钥路径
