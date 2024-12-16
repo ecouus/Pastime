@@ -17,10 +17,10 @@
 nano /root/backup.sh
 
 # 复制脚本内容到文件中
-# [将脚本内容粘贴进去]
+将脚本内容粘贴进去]（https://github.com）
 
-# 设置执行权限
-chmod +x /root/backup.sh
+# 设置权限，因包含敏感信息，故仅为文件所有者设置读写执行权限
+chmod 700 /root/backup.sh
 ```
 
 ### 2. 配置脚本
