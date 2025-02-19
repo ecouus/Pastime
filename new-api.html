@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>私人 API 站点</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        :root {
+            --primary: #1565C0;
+            --accent: #00C4FF;
+            --background: #ffffff;
+            --card-bg: #f8f9fa;
+            --text: #2C3E50;
+            --text-secondary: #64748B;
+            --border: #e9ecef;
+            --shadow: rgba(0, 0, 0, 0.05);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--background);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow);
+            overflow: hidden;
+        }
+        
+        header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: white;
+            font-weight: bold;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 191, 165, 0.1);
+            color: #00BFA5;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+        
+        .status-indicator::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #00BFA5;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .tagline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .description {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        main {
+            padding: 2rem;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        
+        .feature p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .info {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-icon {
+            margin-right: 0.75rem;
+        }
+        
+        .access-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        footer {
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            background: var(--card-bg);
+        }
+        
+        @media (max-width: 768px) {
+            .logo-container {
+                flex-wrap: wrap;
+            }
+            
+            .status-indicator {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+            
+            .tagline {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">API</div>
+                <h1>私人 API 站点</h1>
+                <div class="status-indicator">运行中</div>
+            </div>
+            
+            
+            <p class="description">
+                这是一个专为个人使用打造的 API 站点，提供高效、稳定的接口服务，简化日常数据交互，提高开发效率。
+            </p>
+        </header>
+        
+        <main>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>私有化部署</h3>
+                    <p>完全掌控数据与访问权限，通过私有化部署确保数据安全。</p>
+                </div>
+                
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>高效稳定</h3>
+                    <p>轻量架构设计，优化系统性能，确保接口响应速度。</p>
+                </div>
+                
+                <div class="feature">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>安全可控</h3>
+                    <p>精细权限管理，仅限授权用户访问，全链路加密传输。</p>
+                </div>
+                
+                <div class="feature">
+                    <div class="feature-icon">🔄</div>
+                    <h3>灵活扩展</h3>
+                    <p>模块化设计，支持按需增加新功能，适配不同应用场景。</p>
+                </div>
+            </div>
+            
+            <div class="info">
+                <div class="info-item">
+                    <span class="info-icon">🔒</span>
+                    <span>此 API 站点为私人用途，仅限授权用户访问</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">🔑</span>
+                    <span>如需使用，请确保你的设备或 IP 在允许列表中</span>
+                </div>
+            </div>
+            
+            <div class="access-link">
+                <a href="https://me.ecouu.com" class="btn" target="_blank">获取访问权限</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>简洁 · 安全 · 高效 —— 让 API 赋能你的私人开发环境</p>
+        </footer>
+    </div>
+</body>
+</html>
