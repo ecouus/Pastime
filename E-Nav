@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Nav</title>
+    
+    <!-- 引入字体图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入谷歌字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+    // =====================================================
+    // 书签配置 - 在这里修改您的分类和链接
+    // 颜色将自动分配，您不需要指定color属性
+    // =====================================================
+    const bookmarkConfig = [
+        {
+            category: '常用网站',
+            icon: '🔥',
+            links: [
+                { name: '百度', url: 'https://www.baidu.com', desc: '全球最大的中文搜索引擎', icon: 'B' },
+                { name: '腾讯网', url: 'https://www.qq.com', desc: '新闻资讯门户网站', icon: 'Q' },
+                { name: '知乎', url: 'https://www.zhihu.com', desc: '中文互联网高质量问答社区', icon: '知' },
+                { name: '哔哩哔哩', url: 'https://www.bilibili.com', desc: '国内知名的视频弹幕网站' },
+                { name: '淘宝网', url: 'https://www.taobao.com', desc: '中国领先的购物平台' },
+                { name: '微博', url: 'https://weibo.com', desc: '中国领先的社交媒体平台' }
+            ]
+        },
+        {
+            category: '新闻资讯',
+            icon: '📰',
+            links: [
+                { name: '新浪新闻', url: 'https://news.sina.com.cn/', desc: '新浪网新闻中心' },
+                { name: '网易', url: 'https://www.163.com/', desc: '领先的互联网技术公司' },
+                { name: '人民网', url: 'http://www.people.com.cn/', desc: '人民日报社主办的网站' },
+                { name: '澎湃新闻', url: 'https://www.thepaper.cn/', desc: '专注时政与思想的媒体' }
+            ]
+        },
+        {
+            category: '影音娱乐',
+            icon: '🎬',
+            links: [
+                { name: '腾讯视频', url: 'https://v.qq.com/', desc: '中国领先的在线视频平台' },
+                { name: '爱奇艺', url: 'https://www.iqiyi.com/', desc: '中国高品质视频网站' },
+                { name: '优酷', url: 'https://www.youku.com/', desc: '热门视频播放平台' },
+                { name: 'QQ音乐', url: 'https://y.qq.com/', desc: '腾讯旗下音乐平台' },
+                { name: '网易云音乐', url: 'https://music.163.com/', desc: '专注于发现与分享的音乐平台' },
+                { name: '豆瓣', url: 'https://www.douban.com/', desc: '文艺青年的聚集地' }
+            ]
+        },
+        {
+            category: '办公学习',
+            icon: '💼',
+            links: [
+                { name: 'Notion', url: 'https://www.notion.so/', desc: '一体化知识管理工具' },
+                { name: '石墨文档', url: 'https://shimo.im/', desc: '在线协作文档平台' },
+                { name: '语雀', url: 'https://www.yuque.com/', desc: '专业的云端知识库' },
+                { name: '谷歌翻译', url: 'https://translate.google.cn/', desc: '在线翻译工具' },
+                { name: '百度翻译', url: 'https://fanyi.baidu.com/', desc: '在线翻译平台' },
+                { name: 'Wolfram Alpha', url: 'https://www.wolframalpha.com/', desc: '强大的知识计算引擎' }
+            ]
+        },
+        {
+            category: '实用工具',
+            icon: '🛠️',
+            links: [
+                { name: 'WPS', url: 'https://www.wps.cn/', desc: '在线办公软件' },
+                { name: '腾讯文档', url: 'https://docs.qq.com/', desc: '在线协作文档' },
+                { name: '阿里云盘', url: 'https://www.aliyundrive.com/', desc: '云存储服务' },
+                { name: '百度网盘', url: 'https://pan.baidu.com/', desc: '云存储与分享' },
+                { name: '幕布', url: 'https://mubu.com/', desc: '大纲笔记与思维导图' },
+                { name: 'XMind', url: 'https://xmind.cn/', desc: '思维导图软件' }
+            ]
+        }
+    ];
+    </script>
+    
+    <style>
+        :root {
+            /* 主题颜色变量 - 可在这里全局调整颜色 */
+            --primary-color: #4a6cf7;
+            --primary-light: #6b85f8;
+            --primary-dark: #3a56d7;
+            --secondary-color: #f7346b;
+            --surface-color: #ffffff;
+            --background-color: #f0f3f8;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --text-on-primary: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --card-radius: 16px;
+            --item-radius: 12px;
+            --transition-time: 0.3s;
+            
+            /* 预设多种颜色模式 */
+            --color-1: #4a6cf7; /* 蓝色 */
+            --color-2: #f7346b; /* 粉色 */
+            --color-3: #38cb89; /* 绿色 */
+            --color-4: #ffab2d; /* 黄色 */
+            --color-5: #9c6ade; /* 紫色 */
+            --color-6: #1ea896; /* 青色 */
+            --color-7: #f86549; /* 橙色 */
+            --color-8: #506690; /* 蓝灰色 */
+        }
+        
+        /* 暗色模式变量 */
+        .dark-mode {
+            --primary-color: #5d7bf9;
+            --primary-light: #7c8ffa;
+            --primary-dark: #4a64d9;
+            --secondary-color: #f7487d;
+            --surface-color: #2a2a3a;
+            --background-color: #1a1a2e;
+            --text-primary: #f0f0f0;
+            --text-secondary: #d0d0d0;
+            --text-tertiary: #a0a0a0;
+            --text-on-primary: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color var(--transition-time), color var(--transition-time);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        /* 页面标题与欢迎信息 */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: var(--surface-color);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 30px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-time);
+        }
+        
+        /* 磨砂玻璃效果 */
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: -1;
+        }
+        
+        .dark-mode header::before {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            font-weight: 600;
+            transition: color var(--transition-time);
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        
+        .welcome-message {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease 0.2s forwards;
+        }
+        
+        .date-time {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease 0.3s forwards;
+        }
+        
+        .search-box {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto 0;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease 0.4s forwards;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px;
+            padding-left: 45px;
+            border: 2px solid transparent;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: var(--text-primary);
+            transition: all var(--transition-time);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .dark-mode .search-box input {
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+        }
+        
+        .search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.15);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 18px;
+        }
+        
+        .search-box button {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            background: var(--primary-color);
+            border: none;
+            color: var(--text-on-primary);
+            padding: 9px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all var(--transition-time);
+            font-weight: 500;
+        }
+        
+        .search-box button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        
+        /* 分类导航菜单 */
+        .category-nav {
+            background: var(--surface-color);
+            border-radius: var(--card-radius);
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 30px var(--shadow-color);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            transition: all var(--transition-time);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            opacity: 0;
+            animation: fadeInDown 0.5s ease 0.2s forwards;
+        }
+        
+        .category-nav.scrolled {
+            padding: 10px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+        }
+        
+        .category-menu {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            list-style: none;
+            gap: 10px;
+        }
+        
+        .category-menu li {
+            margin: 5px;
+        }
+        
+        .category-menu a {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(240, 243, 248, 0.7);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 30px;
+            font-size: 15px;
+            transition: all var(--transition-time);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark-mode .category-menu a {
+            background: rgba(30, 30, 50, 0.7);
+        }
+        
+        .category-menu a:hover {
+            background: var(--primary-light);
+            color: var(--text-on-primary);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        
+        .category-menu a.active {
+            background: var(--primary-color);
+            color: var(--text-on-primary);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        
+        .category-menu .nav-icon {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        /* 书签部分 */
+        .bookmark-section {
+            margin-bottom: 40px;
+            background: var(--surface-color);
+            border-radius: var(--card-radius);
+            padding: 25px;
+            box-shadow: 0 8px 30px var(--shadow-color);
+            scroll-margin-top: 120px; /* 给锚点导航留出空间 */
+            position: relative;
+            transition: all var(--transition-time);
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+            animation-delay: calc(0.1s * var(--section-index, 0));
+        }
+        
+        /* 磨砂玻璃背景 */
+        .bookmark-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--card-radius);
+            z-index: -1;
+        }
+        
+        .dark-mode .bookmark-section::before {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+        }
+        
+        .section-title {
+            font-size: 22px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .bookmark-section:hover .section-title::after {
+            width: 100px;
+        }
+        
+        .section-icon {
+            margin-right: 12px;
+            font-size: 28px;
+        }
+        
+        .bookmark-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 20px;
+        }
+        
+        .bookmark-item {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: var(--item-radius);
+            padding: 18px;
+            transition: all var(--transition-time);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            border: 1px solid rgba(240, 240, 240, 0.8);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+        
+        .dark-mode .bookmark-item {
+            background: rgba(50, 50, 70, 0.5);
+            border: 1px solid rgba(60, 60, 80, 0.8);
+        }
+        
+        .bookmark-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+            z-index: 0;
+        }
+        
+        .bookmark-item:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1;
+        }
+        
+        .dark-mode .bookmark-item:hover {
+            background: rgba(60, 60, 90, 0.8);
+        }
+        
+        /* 点击波纹效果 */
+        .bookmark-item .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .bookmark-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 18px;
+            color: white;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all var(--transition-time);
+        }
+        
+        .bookmark-item:hover .bookmark-icon {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .bookmark-info {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .bookmark-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+            transition: color var(--transition-time);
+        }
+        
+        .bookmark-item:hover .bookmark-name {
+            color: var(--primary-color);
+        }
+        
+        .bookmark-desc {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: color var(--transition-time);
+        }
+        
+        .bookmark-item:hover .bookmark-desc {
+            color: var(--text-secondary);
+        }
+        
+        /* 移动端菜单收起按钮 */
+        .toggle-nav {
+            display: none;
+            width: 100%;
+            padding: 12px;
+            text-align: center;
+            background: var(--primary-color);
+            color: var(--text-on-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all var(--transition-time);
+        }
+
+        
+        .toggle-nav:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px 0;
+            color: var(--text-tertiary);
+            font-size: 14px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease 1s forwards;
+        }
+        
+        /* 开关控件 */
+        .theme-controls {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .theme-switch {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: all var(--transition-time);
+            color: var(--text-primary);
+            border: none;
+            font-size: 18px;
+        }
+        
+        .theme-switch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px var(--shadow-color);
+        }
+        
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: var(--primary-color);
+            color: var(--text-on-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(74, 108, 247, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-time);
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(74, 108, 247, 0.4);
+        }
+        
+        /* 主题颜色 */
+        .color-1 { background-color: var(--color-1); }
+        .color-2 { background-color: var(--color-2); }
+        .color-3 { background-color: var(--color-3); }
+        .color-4 { background-color: var(--color-4); }
+        .color-5 { background-color: var(--color-5); }
+        .color-6 { background-color: var(--color-6); }
+        .color-7 { background-color: var(--color-7); }
+        .color-8 { background-color: var(--color-8); }
+        
+        /* 网站图标图片样式 */
+        .favicon-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .bookmark-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .search-box {
+                width: 95%;
+            }
+            
+            .category-menu {
+                flex-direction: column;
+                display: none;
+            }
+            
+            .category-menu.expanded {
+                display: flex;
+            }
+            
+            .toggle-nav {
+                display: block;
+            }
+            
+            .category-nav {
+                padding: 10px;
+            }
+            
+            .bookmark-section {
+                padding: 20px 15px;
+            }
+            
+            .bookmark-item {
+                padding: 15px;
+            }
+            
+            .bookmark-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主题控制按钮 -->
+    <div class="theme-controls">
+        <button class="theme-switch" id="darkModeToggle" title="切换深色/浅色模式">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>E-Nav演示站</h1>
+                <p class="welcome-message" id="welcomeMessage">欢迎回来，祝您使用愉快！</p>
+                <p class="date-time" id="dateTime"></p>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="搜索网站...">
+                    <button id="searchBtn">搜索</button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 分类导航菜单 -->
+        <nav class="category-nav" id="categoryNav">
+            <button class="toggle-nav" id="toggleNav">显示分类菜单 <i class="fas fa-chevron-down"></i></button>
+            <ul class="category-menu" id="categoryMenu">
+                <!-- 分类菜单项将通过JS动态生成 -->
+            </ul>
+        </nav>
+        
+        <div id="bookmarkContainer">
+            <!-- 书签内容将通过JS动态生成 -->
+        </div>
+        
+        <footer>
+            <p>© 2025 <a href="https://github.com/kirklin/E-Nav" target="_blank">我的书签导航</a> · 一个简洁易用的网址导航页 · 版权所有</p>
+        </footer>
+    </div>
+    
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" title="返回顶部">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新欢迎消息
+            updateWelcomeMessage();
+            
+            // 更新日期时间
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // 渲染分类菜单
+            renderCategoryMenu();
+            
+            // 渲染书签
+            renderBookmarks();
+            
+            // 搜索功能
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            // 搜索框实时筛选
+            searchInput.addEventListener('input', function() {
+                filterBookmarks(this.value);
+            });
+            
+            // 搜索按钮
+            searchBtn.addEventListener('click', function() {
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm) {
+                    searchBaidu(searchTerm);
+                }
+            });
+            
+            // 回车键搜索
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const searchTerm = this.value.trim();
+                    if (searchTerm) {
+                        searchBaidu(searchTerm);
+                    }
+                }
+            });
+            
+            // 移动端菜单切换
+            document.getElementById('toggleNav').addEventListener('click', function() {
+                const menu = document.getElementById('categoryMenu');
+                menu.classList.toggle('expanded');
+                this.innerHTML = menu.classList.contains('expanded') ? 
+                    '隐藏分类菜单 <i class="fas fa-chevron-up"></i>' : 
+                    '显示分类菜单 <i class="fas fa-chevron-down"></i>';
+            });
+            
+            // 滚动事件处理
+            window.addEventListener('scroll', function() {
+                handleScroll();
+            });
+            
+            // 返回顶部按钮
+            document.getElementById('backToTop').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // 初始化导航高亮
+            updateActiveCategory();
+            
+            // 深色模式切换
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+            
+            // 点击波纹效果
+            document.querySelectorAll('.bookmark-item').forEach(item => {
+                item.addEventListener('click', createRippleEffect);
+            });
+            
+            // 检查存储的主题模式
+            checkSavedTheme();
+        });
+        
+        // 更新欢迎消息
+        function updateWelcomeMessage() {
+            const hour = new Date().getHours();
+            let greeting;
+            
+            if (hour >= 5 && hour < 12) {
+                greeting = "早上好";
+            } else if (hour >= 12 && hour < 14) {
+                greeting = "中午好";
+            } else if (hour >= 14 && hour < 18) {
+                greeting = "下午好";
+            } else if (hour >= 18 && hour < 22) {
+                greeting = "晚上好";
+            } else {
+                greeting = "夜深了";
+            }
+            
+            document.getElementById('welcomeMessage').textContent = `${greeting}，祝您使用愉快！`;
+        }
+        
+        // 更新日期时间
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            
+            document.getElementById('dateTime').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        // 渲染分类菜单
+        function renderCategoryMenu() {
+            const menu = document.getElementById('categoryMenu');
+            menu.innerHTML = '';
+            
+            // 创建所有分类项
+            bookmarkConfig.forEach(function(category, index) {
+                const sectionId = 'cat-' + category.category.replace(/\s+/g, '-').toLowerCase();
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a href="#${sectionId}" class="category-link">
+                        <span class="nav-icon">${category.icon}</span>
+                        ${category.category}
+                    </a>
+                `;
+                menu.appendChild(li);
+                
+                // 添加延迟动画
+                li.style.opacity = '0';
+                li.style.animation = `fadeInDown 0.5s ease ${0.1 + (index * 0.05)}s forwards`;
+            });
+            
+            // 分类点击事件
+            document.querySelectorAll('.category-link').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    // 在移动设备上点击后收起菜单
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('categoryMenu').classList.remove('expanded');
+                        document.getElementById('toggleNav').innerHTML = '显示分类菜单 <i class="fas fa-chevron-down"></i>';
+                    }
+                    
+                    // 一小段延迟，等待滚动完成后更新高亮
+                    setTimeout(function() {
+                        updateActiveCategory();
+                    }, 300);
+                });
+            });
+        }
+        
+        // 渲染书签
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarkContainer');
+            container.innerHTML = '';
+            
+            // 为每个分类创建一个区块
+            bookmarkConfig.forEach(function(category, categoryIndex) {
+                const sectionId = 'cat-' + category.category.replace(/\s+/g, '-').toLowerCase();
+                
+                const section = document.createElement('div');
+                section.className = 'bookmark-section';
+                section.id = sectionId;
+                section.style.setProperty('--section-index', categoryIndex + 1);
+                
+                let html = `
+                    <h2 class="section-title">
+                        <span class="section-icon">${category.icon}</span>
+                        ${category.category}
+                    </h2>
+                    <div class="bookmark-grid">
+                `;
+                
+                // 为每个链接创建一个书签
+                category.links.forEach(function(link, index) {
+                    // 确定是否有用户自定义图标
+                    const hasUserIcon = !!link.icon;
+                    
+                    // 获取图标内容 (优先使用用户定义的，其次使用名称首字母)
+                    const iconContent = hasUserIcon ? link.icon : link.name.charAt(0);
+                    
+                    // 为每个链接分配一个确定的颜色 (基于URL的哈希值，确保相同URL总是同一个颜色)
+                    const colorClass = getColorForUrl(link.url, index);
+                    
+                    html += `
+                        <a href="${link.url}" class="bookmark-item" target="_blank" data-has-icon="${hasUserIcon}">
+                            <div class="bookmark-icon ${colorClass}" data-has-user-icon="${hasUserIcon}">${iconContent}</div>
+                            <div class="bookmark-info">
+                                <div class="bookmark-name">${link.name}</div>
+                                <div class="bookmark-desc">${link.desc || ''}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                html += '</div>';
+                section.innerHTML = html;
+                container.appendChild(section);
+            });
+            
+            // 加载网站图标
+            loadFavicons();
+            
+            // 添加点击波纹效果
+            document.querySelectorAll('.bookmark-item').forEach(item => {
+                item.addEventListener('click', createRippleEffect);
+            });
+        }
+        
+        // 创建点击波纹效果
+        function createRippleEffect(e) {
+            const button = this;
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            button.appendChild(ripple);
+            
+            // 获取点击位置
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            
+            ripple.style.width = ripple.style.height = `${size}px`;
+            ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+            ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+            
+            // 动画完成后移除元素
+            ripple.addEventListener('animationend', () => {
+                ripple.remove();
+            });
+        }
+        
+        // 为URL生成一个确定的颜色类 (确保同一网站总是获得相同的颜色)
+        function getColorForUrl(url, fallbackIndex) {
+            // 从URL生成一个简单的哈希值
+            let hash = 0;
+            for (let i = 0; i < url.length; i++) {
+                hash = ((hash << 5) - hash) + url.charCodeAt(i);
+                hash = hash & hash; // 转换为32位整数
+            }
+            
+            // 如果URL为空或哈希计算失败，则使用索引作为备用
+            if (!url || hash === 0) {
+                hash = fallbackIndex;
+            }
+            
+            // 确保哈希值为正数
+            hash = Math.abs(hash);
+            
+            // 获取可用的颜色类数量
+            const colorClasses = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7', 'color-8'];
+            const numColors = colorClasses.length;
+            
+            // 使用哈希值确定颜色索引
+            const colorIndex = hash % numColors;
+            
+            return colorClasses[colorIndex];
+        }
+        
+        // 处理滚动事件
+        function handleScroll() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const navBar = document.getElementById('categoryNav');
+            const backToTop = document.getElementById('backToTop');
+            
+            // 导航栏样式变化
+            if (scrollTop > 50) {
+                navBar.classList.add('scrolled');
+            } else {
+                navBar.classList.remove('scrolled');
+            }
+            
+            // 返回顶部按钮显示/隐藏
+            if (scrollTop > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+            
+            // 更新当前分类高亮
+            updateActiveCategory();
+        }
+        
+        // 更新当前分类的高亮状态
+        function updateActiveCategory() {
+            const sections = document.querySelectorAll('.bookmark-section');
+            const categoryLinks = document.querySelectorAll('.category-link');
+            
+            // 获取可视区域的中心点
+            const windowHeight = window.innerHeight;
+            const middleScreenPos = window.scrollY + (windowHeight / 3);
+            
+            // 默认激活第一个
+            let activeIndex = 0;
+            
+            // 找到当前在视口中心的分类
+            sections.forEach(function(section, index) {
+                const rect = section.getBoundingClientRect();
+                const sectionTop = rect.top + window.scrollY;
+                const sectionBottom = sectionTop + rect.height;
+                
+                if (middleScreenPos >= sectionTop && middleScreenPos <= sectionBottom) {
+                    activeIndex = index;
+                }
+            });
+            
+            // 移除所有高亮
+            categoryLinks.forEach(function(link) {
+                link.classList.remove('active');
+            });
+            
+            // 添加当前分类的高亮
+            if (categoryLinks[activeIndex]) {
+                categoryLinks[activeIndex].classList.add('active');
+            }
+        }
+        
+        // 加载网站图标
+        function loadFavicons() {
+            const bookmarkItems = document.querySelectorAll('.bookmark-item');
+            
+            bookmarkItems.forEach(function(item) {
+                // 检查是否有用户自定义图标
+                const hasUserIcon = item.getAttribute('data-has-icon') === 'true';
+                
+                // 如果没有用户自定义图标，尝试加载favicon
+                if (!hasUserIcon) {
+                    const url = item.getAttribute('href');
+                    const iconElement = item.querySelector('.bookmark-icon');
+                    
+                    // 获取网站的favicon
+                    const faviconUrl = `https://www.google.com/s2/favicons?domain=${url}&sz=64`;
+                    
+                    // 创建图片元素
+                    const img = document.createElement('img');
+                    img.className = 'favicon-img';
+                    img.src = faviconUrl;
+                    img.alt = '';
+                    
+                    // 加载成功时清除原有内容并插入图片
+                    img.onload = function() {
+                        if (img.naturalWidth > 0) {
+                            iconElement.textContent = '';
+                            iconElement.appendChild(img);
+                        }
+                    };
+                }
+            });
+        }
+        
+        // 筛选书签
+        function filterBookmarks(searchTerm) {
+            searchTerm = searchTerm.toLowerCase();
+            const bookmarkItems = document.querySelectorAll('.bookmark-item');
+            
+            bookmarkItems.forEach(function(item) {
+                const name = item.querySelector('.bookmark-name').textContent.toLowerCase();
+                const desc = item.querySelector('.bookmark-desc').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || desc.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // 隐藏没有匹配项的分类
+            document.querySelectorAll('.bookmark-section').forEach(function(section) {
+                const visibleItems = section.querySelectorAll('.bookmark-item[style="display: flex;"]').length;
+                const hiddenItems = section.querySelectorAll('.bookmark-item[style="display: none;"]').length;
+                const totalItems = visibleItems + hiddenItems;
+                
+                if (totalItems > 0 && visibleItems === 0) {
+                    section.style.display = 'none';
+                } else {
+                    section.style.display = 'block';
+                }
+            });
+        }
+        
+        // 百度搜索
+        function searchBaidu(searchTerm) {
+            window.open('https://www.baidu.com/s?wd=' + encodeURIComponent(searchTerm), '_blank');
+        }
+        
+        // 切换深色模式
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            // 更新图标
+            const icon = document.getElementById('darkModeToggle').querySelector('i');
+            icon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // 保存设置到本地存储
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+        
+        // 检查保存的主题设置
+        function checkSavedTheme() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                const icon = document.getElementById('darkModeToggle').querySelector('i');
+                icon.className = 'fas fa-sun';
+            }
+            
+            // 检查系统主题偏好
+            if (localStorage.getItem('darkMode') === null && 
+                window.matchMedia && 
+                window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.body.classList.add('dark-mode');
+                const icon = document.getElementById('darkModeToggle').querySelector('i');
+                icon.className = 'fas fa-sun';
+            }
+        }
+    </script>
+</body>
+</html>
