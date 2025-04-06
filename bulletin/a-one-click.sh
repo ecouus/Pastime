@@ -8,16 +8,16 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # 变量定义
-INSTALL_DIR="/home/web/announcements"
-NGINX_CONF="/etc/nginx/sites-available/announcements"
-NGINX_ENABLED="/etc/nginx/sites-enabled/announcements"
-HTPASSWD_FILE="/etc/nginx/.htpasswd_announcements"
+INSTALL_DIR="/home/web/bulletin"
+NGINX_CONF="/etc/nginx/sites-available/bulletin"
+NGINX_ENABLED="/etc/nginx/sites-enabled/bulletin"
+HTPASSWD_FILE="/etc/nginx/.htpasswd_bulletin"
 
 # 版本和资源
 PARSEDOWN_URL="https://raw.githubusercontent.com/erusev/parsedown/master/Parsedown.php"
-INDEX_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/announcements/index.php"
-ADMIN_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/announcements/admin.php"
-JSON_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/announcements/announcements.json"
+INDEX_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/bulletin/index.php"
+ADMIN_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/bulletin/admin.php"
+JSON_URL="https://raw.githubusercontent.com/ecouus/Pastime/refs/heads/main/bulletin/announcements.json"
 
 # 检查是否是root用户
 if [ "$(id -u)" != "0" ]; then
@@ -124,14 +124,14 @@ install_system() {
     wget -q $PARSEDOWN_URL -O $INSTALL_DIR/Parsedown.php
     wget -q $INDEX_URL -O $INSTALL_DIR/index.php
     wget -q $ADMIN_URL -O $INSTALL_DIR/admin.php
-    wget -q $JSON_URL -O $INSTALL_DIR/announcements.json
+    wget -q $JSON_URL -O $INSTALL_DIR/bulletin.json
     
     # 设置权限
     echo -e "${YELLOW}设置文件权限...${NC}"
     chown -R www-data:www-data $INSTALL_DIR
     chmod 644 $INSTALL_DIR/*.php
     chmod 644 $INSTALL_DIR/Parsedown.php
-    chmod 666 $INSTALL_DIR/announcements.json
+    chmod 666 $INSTALL_DIR/bulletin.json
     
     # 创建Nginx配置
     echo -e "${YELLOW}创建Nginx配置...${NC}"
