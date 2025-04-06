@@ -53,13 +53,41 @@ install_system() {
     echo -e "${BLUE}           开始安装公告系统                ${NC}"
     echo -e "${BLUE}============================================${NC}"
     
-    # 更新软件包
-    echo -e "${YELLOW}正在更新系统软件包...${NC}"
-    apt update
+    # 检查是否已安装 Nginx
+    if ! command -v nginx &> /dev/null; then
+        echo -e "${YELLOW}Nginx未安装，正在安装...${NC}"
+        apt update
+        apt install -y nginx
+    else
+        echo -e "${GREEN}Nginx已安装，跳过安装步骤${NC}"
+    fi
     
-    # 安装依赖
-    echo -e "${YELLOW}正在安装所需的软件包...${NC}"
-    apt install -y nginx php-fpm apache2-utils wget
+    # 检查是否已安装 PHP-FPM
+    if ! dpkg -l | grep -q "php.*-fpm"; then
+        echo -e "${YELLOW}PHP-FPM未安装，正在安装...${NC}"
+        apt update
+        apt install -y php-fpm
+    else
+        echo -e "${GREEN}PHP-FPM已安装，跳过安装步骤${NC}"
+    fi
+    
+    # 检查是否已安装 apache2-utils (htpasswd工具)
+    if ! command -v htpasswd &> /dev/null; then
+        echo -e "${YELLOW}htpasswd工具未安装，正在安装...${NC}"
+        apt update
+        apt install -y apache2-utils
+    else
+        echo -e "${GREEN}htpasswd工具已安装，跳过安装步骤${NC}"
+    fi
+    
+    # 检查是否已安装 wget
+    if ! command -v wget &> /dev/null; then
+        echo -e "${YELLOW}wget未安装，正在安装...${NC}"
+        apt update
+        apt install -y wget
+    else
+        echo -e "${GREEN}wget已安装，跳过安装步骤${NC}"
+    fi
     
     # 获取当前服务器IP
     SERVER_IP=$(hostname -I | awk '{print $1}')
