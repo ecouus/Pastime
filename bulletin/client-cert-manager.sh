@@ -327,7 +327,6 @@ main() {
       echo -e "${GREEN}请选择操作:${NC}"
       echo -e "  ${YELLOW}1)${NC} 创建CA证书"
       echo -e "  ${YELLOW}2)${NC} 创建客户端证书"
-      echo -e "  ${YELLOW}3)${NC} 生成Nginx配置示例"
       echo -e "  ${YELLOW}9)${NC} 列出所有证书并删除"
       echo -e "  ${YELLOW}0)${NC} 退出"
       read -p "请输入选项 [0,1,2,3,9]: " choice
