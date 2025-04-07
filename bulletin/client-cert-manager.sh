@@ -258,76 +258,6 @@ delete_client_cert() {
   fi
 }
 
-# 生成Nginx配置示例
-gen_nginx_config() {
-  echo -e "${BLUE}生成Nginx配置示例${NC}"
-  
-  # 查找所有证书并提取访问权限
-  cert_dirs=$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
-  
-  if [ -z "$cert_dirs" ]; then
-    echo -e "${YELLOW}没有找到客户端证书${NC}"
-    return 0
-  fi
-  
-  # 收集所有唯一的网站名称
-  declare -A websites
-  
-  for dir in $cert_dirs; do
-    cert_name=$(basename "$dir")
-    cert_file="${dir}/${cert_name}.crt"
-    
-    if [ -f "$cert_file" ]; then
-      access_info=$(openssl x509 -text -noout -in "$cert_file" | grep "OU=" | head -1 | sed 's/.*OU=Access_\([^,]*\).*/\1/')
-      if [ -n "$access_info" ]; then
-        websites["$access_info"]=1
-      fi
-    fi
-  done
-  
-  # 为每个网站生成配置示例
-  echo
-  echo -e "${GREEN}以下是根据已有证书生成的Nginx配置示例:${NC}"
-  echo
-  
-  for website in "${!websites[@]}"; do
-    echo -e "${YELLOW}网站: ${website}${NC}"
-    echo "server {"
-    echo "    server_name ${website}.example.com;"
-    echo "    # SSL配置"
-    echo "    listen 443 ssl http2;"
-    echo "    ssl_certificate /path/to/your/cert.pem;"
-    echo "    ssl_certificate_key /path/to/your/key.pem;"
-    echo ""
-    echo "    # 客户端证书验证"
-    echo "    ssl_client_certificate ${CERT_DIR}/ca.crt;"
-    echo "    ssl_verify_client optional;"
-    echo "    ssl_verify_depth 1;"
-    echo ""
-    echo "    location / {"
-    echo "        set \$access_allowed 0;"
-    echo ""
-    echo "        # 允许IP白名单"
-    echo "        # if (\$remote_addr = \"198.176.54.44\") { set \$access_allowed 1; }"
-    echo ""
-    echo "        # 只允许证书中OU字段包含Access_${website}的客户端访问"
-    echo "        if (\$ssl_client_s_dn ~ \"OU=Access_${website}\") { set \$access_allowed 1; }"
-    echo ""
-    echo "        # 拒绝未授权访问"
-    echo "        if (\$access_allowed = 0) {"
-    echo "            return 403;"
-    echo "        }"
-    echo ""
-    echo "        # 反向代理或网站内容配置"
-    echo "        # proxy_pass http://backend_server;"
-    echo "    }"
-    echo "}"
-    echo
-  done
-  
-  echo -e "${BLUE}注意:${NC} 请根据实际情况修改服务器名称、SSL证书路径和代理目标地址"
-}
-
 # 显示帮助菜单
 show_help() {
   echo -e "${BLUE}客户端证书管理工具${NC}"
@@ -340,13 +270,11 @@ show_help() {
   echo -e "  ${YELLOW}create-ca${NC}     创建新的CA证书"
   echo -e "  ${YELLOW}create${NC}        创建新的客户端证书"
   echo -e "  ${YELLOW}list-delete${NC}   列出所有客户端证书并可选择删除"
-  echo -e "  ${YELLOW}nginx-config${NC}  生成Nginx配置示例"
   echo -e "  ${YELLOW}help${NC}          显示此帮助信息"
   echo ""
   echo -e "${GREEN}交互式菜单选项:${NC}"
   echo -e "  ${YELLOW}1${NC} - 创建CA证书"
   echo -e "  ${YELLOW}2${NC} - 创建客户端证书"
-  echo -e "  ${YELLOW}3${NC} - 生成Nginx配置示例"
   echo -e "  ${YELLOW}9${NC} - 列出所有证书并可选择删除"
   echo -e "  ${YELLOW}0${NC} - 退出"
   echo ""
@@ -383,10 +311,6 @@ main() {
           fi
           exit 0
           ;;
-        nginx-config)
-          gen_nginx_config
-          exit 0
-          ;;
         help|--help|-h)
           show_help
           exit 0
@@ -418,11 +342,6 @@ main() {
           create_client_cert
           echo
           read -p "按回车键返回主菜单" 
-          ;;
-        3)
-          gen_nginx_config
-          echo
-          read -p "按回车键返回主菜单"
           ;;
         9) 
           list_client_certs
