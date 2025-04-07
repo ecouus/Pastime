@@ -131,39 +131,39 @@ create_client_cert() {
 list_client_certs() {
   echo -e "${BLUE}证书列表:${NC}"
   
-  # 查找所有.crt文件但排除ca.crt
-  cert_files=$(find "$CERT_DIR" -name "*.crt" ! -name "ca.crt" 2>/dev/null)
+  # 查找独立目录中的证书，避免重复计数主目录的证书
+  cert_dirs=$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
   
-  if [ -z "$cert_files" ]; then
+  if [ -z "$cert_dirs" ]; then
     echo -e "${YELLOW}没有找到客户端证书${NC}"
     return 0
   fi
   
   echo -e "${GREEN}已发现以下客户端证书:${NC}"
-  for cert in $cert_files; do
-    cert_name=$(basename "$cert" .crt)
-    expiry=$(openssl x509 -enddate -noout -in "$cert" | cut -d= -f2)
-    subject=$(openssl x509 -subject -noout -in "$cert" | sed 's/subject=//g')
+  for dir in $cert_dirs; do
+    cert_name=$(basename "$dir")
+    cert_file="${dir}/${cert_name}.crt"
     
-    # 检查是否有专门的证书目录
-    if [ -d "${CERT_DIR}/${cert_name}" ]; then
-      echo -e "  ${YELLOW}$cert_name${NC} (独立目录: ${CERT_DIR}/${cert_name})"
-    else
+    # 如果证书文件存在，显示其信息
+    if [ -f "$cert_file" ]; then
+      expiry=$(openssl x509 -enddate -noout -in "$cert_file" | cut -d= -f2)
+      subject=$(openssl x509 -subject -noout -in "$cert_file" | sed 's/subject=//g')
+      
       echo -e "  ${YELLOW}$cert_name${NC}"
+      echo -e "    主题: $subject"
+      echo -e "    过期时间: $expiry"
+      echo -e "    证书目录: $dir"
+      echo ""
     fi
-    
-    echo -e "    主题: $subject"
-    echo -e "    过期时间: $expiry"
-    echo ""
   done
 }
 
 # 删除客户端证书
 delete_client_cert() {
-  # 列出所有证书
-  cert_files=$(find "$CERT_DIR" -name "*.crt" ! -name "ca.crt" 2>/dev/null)
+  # 列出所有证书目录
+  cert_dirs=$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
   
-  if [ -z "$cert_files" ]; then
+  if [ -z "$cert_dirs" ]; then
     echo -e "${YELLOW}没有找到客户端证书可删除${NC}"
     return 0
   fi
@@ -173,8 +173,8 @@ delete_client_cert() {
   i=1
   
   echo -e "${BLUE}可删除的证书:${NC}"
-  for cert in $cert_files; do
-    cert_name=$(basename "$cert" .crt)
+  for dir in $cert_dirs; do
+    cert_name=$(basename "$dir")
     cert_names[$i]=$cert_name
     echo -e "  ${GREEN}$i)${NC} $cert_name"
     ((i++))
@@ -242,29 +242,38 @@ main() {
   ensure_cert_dir
   cd "$CERT_DIR" || exit 1
   
-  # 处理命令行参数
-  case "$1" in
-    create-ca)
-      create_ca
-      ;;
-    create)
-      create_client_cert
-      ;;
-    list-delete)
-      list_client_certs
-      if [ -n "$(find "$CERT_DIR" -name "*.crt" ! -name "ca.crt" 2>/dev/null)" ]; then
-        echo -e "${YELLOW}要删除证书吗?${NC}"
-        read -p "是否继续删除操作? (y/n): " delete_confirm
-        if [ "$delete_confirm" = "y" ] || [ "$delete_confirm" = "Y" ]; then
-          delete_client_cert
-        fi
-      fi
-      ;;
-    help|--help|-h)
-      show_help
-      ;;
-    *)
-      # 如果没有参数，显示交互式菜单
+  while true; do
+    # 处理命令行参数
+    if [ -n "$1" ]; then
+      case "$1" in
+        create-ca)
+          create_ca
+          exit 0
+          ;;
+        create)
+          create_client_cert
+          exit 0
+          ;;
+        list-delete)
+          list_client_certs
+          if [ -n "$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)" ]; then
+            echo -e "${YELLOW}要删除证书吗?${NC}"
+            read -p "是否继续删除操作? (y/n): " delete_confirm
+            if [ "$delete_confirm" = "y" ] || [ "$delete_confirm" = "Y" ]; then
+              delete_client_cert
+            fi
+          fi
+          exit 0
+          ;;
+        help|--help|-h)
+          show_help
+          exit 0
+          ;;
+      esac
+      shift
+    else
+      # 显示交互式菜单
+      clear
       echo -e "${BLUE}客户端证书管理${NC}"
       echo -e "${GREEN}请选择操作:${NC}"
       echo -e "  ${YELLOW}1)${NC} 创建CA证书"
@@ -274,23 +283,39 @@ main() {
       read -p "请输入选项 [0,1,2,9]: " choice
       
       case "$choice" in
-        1) create_ca ;;
-        2) create_client_cert ;;
+        1) 
+          create_ca
+          echo
+          read -p "按回车键返回主菜单" 
+          ;;
+        2) 
+          create_client_cert
+          echo
+          read -p "按回车键返回主菜单" 
+          ;;
         9) 
-           list_client_certs
-           if [ -n "$(find "$CERT_DIR" -name "*.crt" ! -name "ca.crt" 2>/dev/null)" ]; then
-             echo -e "${YELLOW}要删除证书吗?${NC}"
-             read -p "是否继续删除操作? (y/n): " delete_confirm
-             if [ "$delete_confirm" = "y" ] || [ "$delete_confirm" = "Y" ]; then
-               delete_client_cert
-             fi
-           fi
-           ;;
-        0) exit 0 ;;
-        *) echo -e "${RED}无效的选择${NC}" ;;
+          list_client_certs
+          if [ -n "$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)" ]; then
+            echo -e "${YELLOW}要删除证书吗?${NC}"
+            read -p "是否继续删除操作? (y/n): " delete_confirm
+            if [ "$delete_confirm" = "y" ] || [ "$delete_confirm" = "Y" ]; then
+              delete_client_cert
+            fi
+          fi
+          echo
+          read -p "按回车键返回主菜单" 
+          ;;
+        0) 
+          echo -e "${GREEN}感谢使用，再见!${NC}"
+          exit 0 
+          ;;
+        *) 
+          echo -e "${RED}无效的选择${NC}"
+          sleep 2
+          ;;
       esac
-      ;;
-  esac
+    fi
+  done
 }
 
 # 执行主程序
