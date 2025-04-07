@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 客户端证书管理脚本
-# 用于创建和删除客户端证书
+# 用于创建和删除客户端证书，支持设置网站访问限制
 
 # 设置证书存储目录
 CERT_DIR="/home/client-cert"
@@ -80,6 +80,10 @@ create_client_cert() {
     return 1
   fi
   
+  # 提示用户输入该证书允许访问的网站
+  read -p "请输入此证书可访问的网站名称 (例如: nav, dashboard): " website_name
+  website_name=${website_name:-$client_name}
+  
   # 为客户端证书创建独立文件夹
   CLIENT_CERT_DIR="${CERT_DIR}/${client_name}"
   if [ ! -d "$CLIENT_CERT_DIR" ]; then
@@ -97,14 +101,39 @@ create_client_cert() {
     fi
   fi
   
-  echo -e "${BLUE}正在创建客户端证书: ${client_name}...${NC}"
+  echo -e "${BLUE}正在创建客户端证书: ${client_name} (访问限制: ${website_name})...${NC}"
   
-  # 生成客户端私钥和证书请求
+  # 创建配置文件
+  CONFIG_FILE="${CLIENT_CERT_DIR}/${client_name}.cnf"
+  cat > "$CONFIG_FILE" << EOF
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = ${client_name}
+O = Client Certificate
+OU = Access_${website_name}
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ${website_name}.example.com
+EOF
+  
+  # 生成客户端私钥
   openssl genrsa -out "${CLIENT_CERT_DIR}/${client_name}.key" 2048 &>/dev/null
-  openssl req -new -key "${CLIENT_CERT_DIR}/${client_name}.key" -subj "/CN=${client_name}" -out "${CLIENT_CERT_DIR}/${client_name}.csr" &>/dev/null
   
-  # 使用CA签发客户端证书
-  openssl x509 -req -in "${CLIENT_CERT_DIR}/${client_name}.csr" -CA "${CERT_DIR}/ca.crt" -CAkey "${CERT_DIR}/ca.key" -CAcreateserial -out "${CLIENT_CERT_DIR}/${client_name}.crt" -days $VALIDITY &>/dev/null
+  # 使用配置文件生成证书请求
+  openssl req -new -key "${CLIENT_CERT_DIR}/${client_name}.key" -config "$CONFIG_FILE" -out "${CLIENT_CERT_DIR}/${client_name}.csr" &>/dev/null
+  
+  # 使用CA签发客户端证书，包含扩展信息
+  openssl x509 -req -in "${CLIENT_CERT_DIR}/${client_name}.csr" \
+    -CA "${CERT_DIR}/ca.crt" -CAkey "${CERT_DIR}/ca.key" -CAcreateserial \
+    -out "${CLIENT_CERT_DIR}/${client_name}.crt" -days $VALIDITY \
+    -extfile "$CONFIG_FILE" -extensions v3_req &>/dev/null
   
   # 提示用户输入P12密码
   echo -e "${YELLOW}请为P12证书文件设置密码 (将用于导入设备)${NC}"
@@ -113,13 +142,22 @@ create_client_cert() {
   # 复制一份证书到主目录方便管理
   cp "${CLIENT_CERT_DIR}/${client_name}.crt" "${CERT_DIR}/${client_name}.crt"
   
+  # 显示证书的详细信息
+  echo
+  echo -e "${BLUE}证书详细信息:${NC}"
+  openssl x509 -text -noout -in "${CLIENT_CERT_DIR}/${client_name}.crt" | grep -E "Subject:|X509v3 Subject Alternative Name:" -A 1
+  
   if [ $? -eq 0 ]; then
+    echo
     echo -e "${GREEN}客户端证书创建成功!${NC}"
     echo -e "  证书目录: ${CLIENT_CERT_DIR}"
     echo -e "  P12证书 (用于导入设备): ${CLIENT_CERT_DIR}/${client_name}.p12"
     echo -e "  证书: ${CLIENT_CERT_DIR}/${client_name}.crt"
     echo -e "  私钥: ${CLIENT_CERT_DIR}/${client_name}.key"
     echo -e "  证书请求: ${CLIENT_CERT_DIR}/${client_name}.csr"
+    echo
+    echo -e "${YELLOW}在Nginx中使用以下配置来限制访问:${NC}"
+    echo -e "  if (\$ssl_client_s_dn ~ \"OU=Access_${website_name}\") { set \$access_allowed 1; }"
     return 0
   else
     echo -e "${RED}客户端证书创建失败!${NC}"
@@ -149,8 +187,16 @@ list_client_certs() {
       expiry=$(openssl x509 -enddate -noout -in "$cert_file" | cut -d= -f2)
       subject=$(openssl x509 -subject -noout -in "$cert_file" | sed 's/subject=//g')
       
+      # 提取访问权限信息
+      access_info=$(openssl x509 -text -noout -in "$cert_file" | grep "OU=" | head -1 | sed 's/.*OU=Access_\([^,]*\).*/\1/')
+      
       echo -e "  ${YELLOW}$cert_name${NC}"
       echo -e "    主题: $subject"
+      
+      if [ -n "$access_info" ]; then
+        echo -e "    访问权限: $access_info"
+      fi
+      
       echo -e "    过期时间: $expiry"
       echo -e "    证书目录: $dir"
       echo ""
@@ -212,10 +258,80 @@ delete_client_cert() {
   fi
 }
 
+# 生成Nginx配置示例
+gen_nginx_config() {
+  echo -e "${BLUE}生成Nginx配置示例${NC}"
+  
+  # 查找所有证书并提取访问权限
+  cert_dirs=$(find "$CERT_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+  
+  if [ -z "$cert_dirs" ]; then
+    echo -e "${YELLOW}没有找到客户端证书${NC}"
+    return 0
+  fi
+  
+  # 收集所有唯一的网站名称
+  declare -A websites
+  
+  for dir in $cert_dirs; do
+    cert_name=$(basename "$dir")
+    cert_file="${dir}/${cert_name}.crt"
+    
+    if [ -f "$cert_file" ]; then
+      access_info=$(openssl x509 -text -noout -in "$cert_file" | grep "OU=" | head -1 | sed 's/.*OU=Access_\([^,]*\).*/\1/')
+      if [ -n "$access_info" ]; then
+        websites["$access_info"]=1
+      fi
+    fi
+  done
+  
+  # 为每个网站生成配置示例
+  echo
+  echo -e "${GREEN}以下是根据已有证书生成的Nginx配置示例:${NC}"
+  echo
+  
+  for website in "${!websites[@]}"; do
+    echo -e "${YELLOW}网站: ${website}${NC}"
+    echo "server {"
+    echo "    server_name ${website}.example.com;"
+    echo "    # SSL配置"
+    echo "    listen 443 ssl http2;"
+    echo "    ssl_certificate /path/to/your/cert.pem;"
+    echo "    ssl_certificate_key /path/to/your/key.pem;"
+    echo ""
+    echo "    # 客户端证书验证"
+    echo "    ssl_client_certificate ${CERT_DIR}/ca.crt;"
+    echo "    ssl_verify_client optional;"
+    echo "    ssl_verify_depth 1;"
+    echo ""
+    echo "    location / {"
+    echo "        set \$access_allowed 0;"
+    echo ""
+    echo "        # 允许IP白名单"
+    echo "        # if (\$remote_addr = \"198.176.54.44\") { set \$access_allowed 1; }"
+    echo ""
+    echo "        # 只允许证书中OU字段包含Access_${website}的客户端访问"
+    echo "        if (\$ssl_client_s_dn ~ \"OU=Access_${website}\") { set \$access_allowed 1; }"
+    echo ""
+    echo "        # 拒绝未授权访问"
+    echo "        if (\$access_allowed = 0) {"
+    echo "            return 403;"
+    echo "        }"
+    echo ""
+    echo "        # 反向代理或网站内容配置"
+    echo "        # proxy_pass http://backend_server;"
+    echo "    }"
+    echo "}"
+    echo
+  done
+  
+  echo -e "${BLUE}注意:${NC} 请根据实际情况修改服务器名称、SSL证书路径和代理目标地址"
+}
+
 # 显示帮助菜单
 show_help() {
   echo -e "${BLUE}客户端证书管理工具${NC}"
-  echo -e "此脚本用于创建和管理用于Nginx客户端认证的SSL证书"
+  echo -e "此脚本用于创建和管理用于Nginx客户端认证的SSL证书，支持设置网站访问限制"
   echo ""
   echo -e "${GREEN}用法:${NC}"
   echo -e "  $0 [选项]"
@@ -224,17 +340,19 @@ show_help() {
   echo -e "  ${YELLOW}create-ca${NC}     创建新的CA证书"
   echo -e "  ${YELLOW}create${NC}        创建新的客户端证书"
   echo -e "  ${YELLOW}list-delete${NC}   列出所有客户端证书并可选择删除"
+  echo -e "  ${YELLOW}nginx-config${NC}  生成Nginx配置示例"
   echo -e "  ${YELLOW}help${NC}          显示此帮助信息"
   echo ""
   echo -e "${GREEN}交互式菜单选项:${NC}"
   echo -e "  ${YELLOW}1${NC} - 创建CA证书"
   echo -e "  ${YELLOW}2${NC} - 创建客户端证书"
+  echo -e "  ${YELLOW}3${NC} - 生成Nginx配置示例"
   echo -e "  ${YELLOW}9${NC} - 列出所有证书并可选择删除"
   echo -e "  ${YELLOW}0${NC} - 退出"
   echo ""
   echo -e "${GREEN}示例:${NC}"
   echo -e "  $0 create        # 创建新的客户端证书"
-  echo -e "  $0 list-delete   # 列出并可选择删除现有客户端证书"
+  echo -e "  $0 nginx-config  # 生成Nginx配置示例"
 }
 
 # 主程序
@@ -265,12 +383,19 @@ main() {
           fi
           exit 0
           ;;
+        nginx-config)
+          gen_nginx_config
+          exit 0
+          ;;
         help|--help|-h)
           show_help
           exit 0
           ;;
+        *)
+          show_help
+          exit 1
+          ;;
       esac
-      shift
     else
       # 显示交互式菜单
       clear
@@ -278,9 +403,10 @@ main() {
       echo -e "${GREEN}请选择操作:${NC}"
       echo -e "  ${YELLOW}1)${NC} 创建CA证书"
       echo -e "  ${YELLOW}2)${NC} 创建客户端证书"
+      echo -e "  ${YELLOW}3)${NC} 生成Nginx配置示例"
       echo -e "  ${YELLOW}9)${NC} 列出所有证书并删除"
       echo -e "  ${YELLOW}0)${NC} 退出"
-      read -p "请输入选项 [0,1,2,9]: " choice
+      read -p "请输入选项 [0,1,2,3,9]: " choice
       
       case "$choice" in
         1) 
@@ -292,6 +418,11 @@ main() {
           create_client_cert
           echo
           read -p "按回车键返回主菜单" 
+          ;;
+        3)
+          gen_nginx_config
+          echo
+          read -p "按回车键返回主菜单"
           ;;
         9) 
           list_client_certs
