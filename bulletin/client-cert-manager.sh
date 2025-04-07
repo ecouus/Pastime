@@ -4,7 +4,7 @@
 # 用于创建和删除客户端证书
 
 # 设置证书存储目录
-CERT_DIR="/home/cert-auth"
+CERT_DIR="/home/client-cert"
 # 设置证书有效期（天）
 VALIDITY=36500  # 100年
 
