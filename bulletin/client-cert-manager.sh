@@ -80,8 +80,15 @@ create_client_cert() {
     return 1
   fi
   
+  # 为客户端证书创建独立文件夹
+  CLIENT_CERT_DIR="${CERT_DIR}/${client_name}"
+  if [ ! -d "$CLIENT_CERT_DIR" ]; then
+    echo -e "${BLUE}为证书创建目录: ${CLIENT_CERT_DIR}${NC}"
+    mkdir -p "$CLIENT_CERT_DIR"
+  fi
+  
   # 检查证书是否已存在
-  if [ -f "${CERT_DIR}/${client_name}.crt" ]; then
+  if [ -f "${CLIENT_CERT_DIR}/${client_name}.crt" ]; then
     echo -e "${YELLOW}警告: 证书 ${client_name} 已存在${NC}"
     read -p "是否覆盖? (y/n): " overwrite
     if [ "$overwrite" != "y" ] && [ "$overwrite" != "Y" ]; then
@@ -93,22 +100,26 @@ create_client_cert() {
   echo -e "${BLUE}正在创建客户端证书: ${client_name}...${NC}"
   
   # 生成客户端私钥和证书请求
-  openssl genrsa -out "${CERT_DIR}/${client_name}.key" 2048 &>/dev/null
-  openssl req -new -key "${CERT_DIR}/${client_name}.key" -subj "/CN=${client_name}" -out "${CERT_DIR}/${client_name}.csr" &>/dev/null
+  openssl genrsa -out "${CLIENT_CERT_DIR}/${client_name}.key" 2048 &>/dev/null
+  openssl req -new -key "${CLIENT_CERT_DIR}/${client_name}.key" -subj "/CN=${client_name}" -out "${CLIENT_CERT_DIR}/${client_name}.csr" &>/dev/null
   
   # 使用CA签发客户端证书
-  openssl x509 -req -in "${CERT_DIR}/${client_name}.csr" -CA "${CERT_DIR}/ca.crt" -CAkey "${CERT_DIR}/ca.key" -CAcreateserial -out "${CERT_DIR}/${client_name}.crt" -days $VALIDITY &>/dev/null
+  openssl x509 -req -in "${CLIENT_CERT_DIR}/${client_name}.csr" -CA "${CERT_DIR}/ca.crt" -CAkey "${CERT_DIR}/ca.key" -CAcreateserial -out "${CLIENT_CERT_DIR}/${client_name}.crt" -days $VALIDITY &>/dev/null
   
   # 提示用户输入P12密码
   echo -e "${YELLOW}请为P12证书文件设置密码 (将用于导入设备)${NC}"
-  openssl pkcs12 -export -inkey "${CERT_DIR}/${client_name}.key" -in "${CERT_DIR}/${client_name}.crt" -certfile "${CERT_DIR}/ca.crt" -out "${CERT_DIR}/${client_name}.p12"
+  openssl pkcs12 -export -inkey "${CLIENT_CERT_DIR}/${client_name}.key" -in "${CLIENT_CERT_DIR}/${client_name}.crt" -certfile "${CERT_DIR}/ca.crt" -out "${CLIENT_CERT_DIR}/${client_name}.p12"
+  
+  # 复制一份证书到主目录方便管理
+  cp "${CLIENT_CERT_DIR}/${client_name}.crt" "${CERT_DIR}/${client_name}.crt"
   
   if [ $? -eq 0 ]; then
     echo -e "${GREEN}客户端证书创建成功!${NC}"
-    echo -e "  P12证书 (用于导入设备): ${CERT_DIR}/${client_name}.p12"
-    echo -e "  证书: ${CERT_DIR}/${client_name}.crt"
-    echo -e "  私钥: ${CERT_DIR}/${client_name}.key"
-    echo -e "  证书请求: ${CERT_DIR}/${client_name}.csr"
+    echo -e "  证书目录: ${CLIENT_CERT_DIR}"
+    echo -e "  P12证书 (用于导入设备): ${CLIENT_CERT_DIR}/${client_name}.p12"
+    echo -e "  证书: ${CLIENT_CERT_DIR}/${client_name}.crt"
+    echo -e "  私钥: ${CLIENT_CERT_DIR}/${client_name}.key"
+    echo -e "  证书请求: ${CLIENT_CERT_DIR}/${client_name}.csr"
     return 0
   else
     echo -e "${RED}客户端证书创建失败!${NC}"
@@ -133,7 +144,14 @@ list_client_certs() {
     cert_name=$(basename "$cert" .crt)
     expiry=$(openssl x509 -enddate -noout -in "$cert" | cut -d= -f2)
     subject=$(openssl x509 -subject -noout -in "$cert" | sed 's/subject=//g')
-    echo -e "  ${YELLOW}$cert_name${NC}"
+    
+    # 检查是否有专门的证书目录
+    if [ -d "${CERT_DIR}/${cert_name}" ]; then
+      echo -e "  ${YELLOW}$cert_name${NC} (独立目录: ${CERT_DIR}/${cert_name})"
+    else
+      echo -e "  ${YELLOW}$cert_name${NC}"
+    fi
+    
     echo -e "    主题: $subject"
     echo -e "    过期时间: $expiry"
     echo ""
@@ -176,8 +194,15 @@ delete_client_cert() {
     read -p "确认删除? (y/n): " confirm
     
     if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-      # 删除所有相关文件
+      # 删除证书目录
+      if [ -d "${CERT_DIR}/${client_name}" ]; then
+        rm -rf "${CERT_DIR}/${client_name}"
+        echo -e "${GREEN}证书目录 ${CERT_DIR}/${client_name} 已删除${NC}"
+      fi
+      
+      # 删除主目录中的证书文件（如果存在）
       rm -f "${CERT_DIR}/${client_name}.key" "${CERT_DIR}/${client_name}.csr" "${CERT_DIR}/${client_name}.crt" "${CERT_DIR}/${client_name}.p12"
+      
       echo -e "${GREEN}证书 $client_name 已成功删除${NC}"
     else
       echo -e "${YELLOW}操作已取消${NC}"
